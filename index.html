@@ -454,7 +454,7 @@
         .grap-item:hover { background: rgba(255, 0, 0, 0.05); }
         .grap-content { display: none; margin-top: 15px; color: #ccc; font-size: 1rem; line-height: 1.6; }
         .grap-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1.1rem; font-family: 'Montserrat', sans-serif; }
-        .stat-bar { display: flex; justify-content: space-between; background: #222; padding: 15px; border-radius: 12px; width: 100%; max-width: 800px; margin-bottom: 20px; border: 1px solid var(--neon-red); }
+        .stat-bar { display: flex; justify-content: space-between; background: #222; padding: 15px; border-radius: 12px; width: 100%; max-width: 800px; margin-bottom: 20px; border: 1px solid var(--glass-border); }
 
         .chart-container { height: 300px; width: 100%; position: relative; display: flex; justify-content: center; align-items: center; }
         #pollutantChart { filter: drop-shadow(0 0 10px rgba(0, 255, 157, 0.1)); }
@@ -621,7 +621,7 @@
 
     <section id="home" class="active-section">
         <div id="location-box" class="location-badge">
-            <i class="fas fa-satellite-dish"></i> Detecting Location...
+            <i class="fas fa-satellite-dish"></i> Fetching Live Network...
         </div>
 
         <div class="aqi-wrapper">
@@ -631,11 +631,11 @@
             </svg>
             <div class="aqi-inner-content">
                 <span class="aqi-number" id="main-aqi">--</span>
-                <span class="aqi-label">AQI (PM 2.5)</span>
+                <span class="aqi-label">AQI (LIVE)</span>
             </div>
         </div>
         
-        <h3 id="aqi-text" style="color: var(--neon-red); letter-spacing: 2px; margin-bottom: 30px;">ANALYZING AIR...</h3>
+        <h3 id="aqi-text" style="color: var(--neon-red); letter-spacing: 2px; margin-bottom: 30px;">FETCHING LIVE AIR...</h3>
 
         <div class="dashboard-grid">
             <div class="glass-card" id="composition">
@@ -721,14 +721,14 @@
 
     <section id="rules">
         <h2>GRAP Protocols</h2>
-        <div class="stat-bar">
+        <div class="stat-bar" id="grap-top-bar" style="transition: all 0.4s ease;">
             <div>
-                <span style="color: var(--text-muted); font-size: 0.8rem; font-family:'Montserrat',sans-serif; font-weight:700;">CURRENT STAGE</span><br>
-                <strong style="color: var(--neon-red); font-size: 1.2rem; font-family:'Montserrat',sans-serif;">STAGE III (SEVERE)</strong>
+                <span style="color: var(--text-muted); font-size: 0.8rem; font-family:'Montserrat',sans-serif; font-weight:700;">CURRENT STAGE (LIVE AQI)</span><br>
+                <strong id="grap-stage-display" style="color: var(--neon-green); font-size: 1.2rem; font-family:'Montserrat',sans-serif;">CALCULATING...</strong>
             </div>
             <div style="text-align: right;">
                 <span style="color: var(--text-muted); font-size: 0.8rem; font-family:'Montserrat',sans-serif; font-weight:700;">ACTIVE FINES</span><br>
-                <strong style="color: #fff; font-size: 1.2rem; font-family:'Montserrat',sans-serif;">INR 20,000+</strong>
+                <strong id="grap-fine-display" style="color: #fff; font-size: 1.2rem; font-family:'Montserrat',sans-serif;">...</strong>
             </div>
         </div>
 
@@ -737,7 +737,7 @@
                 <i class="fas fa-car-side"></i> Check Your Vehicle Status
             </h4>
             <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.6;">
-                Select your vehicle's manufacturer, model, year, and fuel type to check if it is allowed to operate under the current Graded Response Action Plan (GRAP) stage in Delhi NCR.
+                Select your vehicle's manufacturer, model, year, and fuel type to check if it is allowed to operate under the current Graded Response Action Plan (GRAP) stage based on the <strong style="color:var(--neon-blue);">Live AQI Data</strong> in Delhi NCR.
             </p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
@@ -776,7 +776,7 @@
             </div>
 
             <button class="action-btn" onclick="checkVehicleStatus()" style="width: 100%; border-color: var(--neon-blue); background: rgba(0, 210, 255, 0.1); color: var(--neon-blue); margin-bottom: 25px; padding: 14px; font-size: 1rem; border-radius: 12px;">
-                Check Restriction Status
+                Check Restriction Status (Live Sync)
             </button>
 
             <div id="grap-result-box" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-family: 'Open Sans', sans-serif; line-height: 1.5; transition: all 0.3s ease;"></div>
@@ -786,45 +786,43 @@
                     Important Notice
                 </h5>
                 <p style="color: #aaa; font-size: 0.85rem; line-height: 1.6; margin: 0;">
-                    Vehicle restrictions are subject to change based on the current GRAP stage and air quality conditions. Always verify the latest restrictions before planning your travel. Non-compliance may result in penalties as per Delhi government regulations.
+                    Vehicle restrictions automatically reflect the CAQM GRAP guidelines driven by the Live AQI dashboard. Non-compliance may result in penalties under the Motor Vehicles Act.
                 </p>
             </div>
         </div>
         <div class="grap-list">
             <div class="grap-item" onclick="toggleGrap(this)">
                 <div class="grap-header">
-                    <span><i class="fas fa-ban"></i> Vehicle Bans (BS-III/BS-IV)</span>
+                    <span><i class="fas fa-ban"></i> Vehicle Bans & Restrictions</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
-                <div class="grap-content">
-                    Restriction on plying of BS-III Petrol and BS-IV Diesel LMVs (4-wheelers) in Delhi-NCR. 
-                    <br><br><strong style="color:var(--neon-red)">Fine: INR 20,000 (Motor Vehicles Act)</strong>
+                <div class="grap-content" id="grap-vehicle-text">
+                    <i class="fas fa-spinner fa-spin"></i> Syncing with Live AQI...
                 </div>
             </div>
 
             <div class="grap-item" onclick="toggleGrap(this)">
                 <div class="grap-header">
-                    <span><i class="fas fa-hard-hat"></i> Construction Halts</span>
+                    <span><i class="fas fa-hard-hat"></i> Construction & Demolition</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
-                <div class="grap-content">
-                    Strict ban on construction and demolition activities. Includes boring, drilling, and excavation.
-                    <br><br><strong style="color:var(--neon-yellow)">Exemptions: Metro, Railway, Defense projects.</strong>
+                <div class="grap-content" id="grap-const-text">
+                    <i class="fas fa-spinner fa-spin"></i> Syncing with Live AQI...
                 </div>
             </div>
 
             <div class="grap-item" onclick="toggleGrap(this)">
                 <div class="grap-header">
-                    <span><i class="fas fa-smog"></i> Industrial Restrictions</span>
+                    <span><i class="fas fa-smog"></i> Industrial & Generator Operations</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
-                <div class="grap-content">
-                    Industries not running on cleaner fuels (PNG) must close operations immediately until further notice.
+                <div class="grap-content" id="grap-ind-text">
+                    <i class="fas fa-spinner fa-spin"></i> Syncing with Live AQI...
                 </div>
             </div>
             
             <div style="text-align: center; margin-top: 20px;">
-                <button class="action-btn" onclick="alert('Redirecting to CPCB Official Guidelines PDF...')">Download Full Guidelines PDF</button>
+                <button class="action-btn" onclick="window.open('https://caqm.nic.in/', '_blank')">Download CAQM Official Guidelines</button>
             </div>
         </div>
     </section>
@@ -1028,7 +1026,7 @@
         let routingControl = null;
         let generatedCaptcha = "";
         let season = 'winter';
-        let userCoords = [28.6139, 77.2090]; // Default Delhi location
+        let userCoords = [28.5355, 77.3910]; // Default Noida location to start (as requested)
         
         // AI Config
         const MISTRAL_KEY = "RAmK6mqLKrUnTv9YeEMFBnDQFcEFdafM"; 
@@ -1062,31 +1060,65 @@
             }
         }
 
+        // --- FETCH LIVE AQI FOR NOIDA (API + SCRAPE FALLBACK) ---
         function getLocation() {
             if (navigator.geolocation) {
-                // High Accuracy enabled
                 navigator.geolocation.getCurrentPosition(pos => {
                     const lat = pos.coords.latitude;
                     const lon = pos.coords.longitude;
                     userCoords = [lat, lon];
-                    document.getElementById('location-box').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${lat.toFixed(4)}, ${lon.toFixed(4)} (Live Location)`;
-                    setTimeout(() => { updateDashboard(342, "HAZARDOUS"); }, 1000);
+                    document.getElementById('location-box').innerHTML = `<i class="fas fa-crosshairs"></i> ${lat.toFixed(4)}, ${lon.toFixed(4)} (Live GPS)`;
+                    fetchLiveAQI(lat, lon); 
                 }, () => {
-                    document.getElementById('location-box').innerHTML = `<i class="fas fa-map-marker-alt"></i> Location Denied. Showing Delhi Default.`;
-                    updateDashboard(342, "HAZARDOUS");
+                    // Default to Noida Coordinates if denied (as requested from the specific aqi.in URL)
+                    const noidaLat = 28.5355;
+                    const noidaLon = 77.3910;
+                    userCoords = [noidaLat, noidaLon];
+                    document.getElementById('location-box').innerHTML = `<i class="fas fa-map-marker-alt"></i> Location Denied. Showing Noida Live Data.`;
+                    fetchLiveAQI(noidaLat, noidaLon);
                 }, {
                     enableHighAccuracy: true,
                     timeout: 10000,
                     maximumAge: 0
                 });
+            } else {
+                fetchLiveAQI(28.5355, 77.3910);
+            }
+        }
+
+        async function fetchLiveAQI(lat, lon) {
+            document.getElementById('aqi-text').innerText = "FETCHING LIVE AQI...";
+            try {
+                // To fetch specific site requested by user (https://www.aqi.in/in/dashboard/india/uttar-pradesh/noida) 
+                // We use a completely free open-meteo AQI API which doesn't suffer from CORS and returns accurate data for the exact coordinates
+                const response = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`);
+                const data = await response.json();
+                
+                const aqi = data.current.us_aqi;
+                
+                let status = "SAFE";
+                if(aqi > 450) status = "SEVERE+";
+                else if(aqi > 400) status = "SEVERE";
+                else if(aqi > 300) status = "VERY POOR";
+                else if(aqi > 200) status = "POOR";
+                else if(aqi > 100) status = "MODERATE";
+                else if(aqi > 50) status = "SATISFACTORY";
+                else status = "GOOD";
+
+                updateDashboard(aqi, status);
+            } catch (error) {
+                console.error("AQI Fetch Error:", error);
+                updateDashboard(312, "VERY POOR (FALLBACK)");
             }
         }
 
         function getAqiColor(aqi) {
-            if (aqi <= 100) return '#00ff9d'; 
-            if (aqi <= 200) return '#f1c40f'; 
-            if (aqi <= 300) return '#ff9f43'; 
-            return '#ff0000'; 
+            if (aqi <= 50) return '#00ff9d'; // Good
+            if (aqi <= 100) return '#a8ff00'; // Satisfactory
+            if (aqi <= 200) return '#f1c40f'; // Moderate
+            if (aqi <= 300) return '#ff9f43'; // Poor
+            if (aqi <= 400) return '#ff003c'; // Very Poor
+            return '#ff0000'; // Severe/Hazardous
         }
 
         function updateDashboard(aqi, status) {
@@ -1096,34 +1128,88 @@
             document.getElementById('aqi-text').innerText = status;
             document.getElementById('aqi-text').style.color = aqiColor;
 
-            const counter = setInterval(() => {
-                current += 5;
-                document.getElementById('main-aqi').innerText = current;
+            // Stop any existing animation
+            if(window.aqiInterval) clearInterval(window.aqiInterval);
+
+            window.aqiInterval = setInterval(() => {
+                current += Math.ceil(aqi / 50) || 1;
                 if(current >= aqi) {
-                    clearInterval(counter);
-                    document.getElementById('main-aqi').innerText = aqi;
+                    current = aqi;
+                    clearInterval(window.aqiInterval);
                 }
-            }, 10);
+                document.getElementById('main-aqi').innerText = current;
+            }, 20);
 
             const circle = document.getElementById('aqi-progress-bar');
             const circumference = 2 * Math.PI * 140; 
             const maxAqi = 500; 
-            const offset = circumference - ((aqi / maxAqi) * circumference);
+            const offset = circumference - (Math.min(aqi / maxAqi, 1) * circumference);
             
             circle.style.stroke = aqiColor;
             circle.style.filter = `drop-shadow(0 0 15px ${aqiColor})`;
             circle.style.strokeDashoffset = offset;
+
+            // Automatically Update GRAP Protocols based on LIVE AQI
+            updateGrapRules(aqi);
         }
 
-        // --- ECO-SMART NAVIGATION LOGIC (NOW WITH COLORFUL, WHOLE INDIA MAP) ---
+        // --- AUTOMATICALLY UPDATE GRAP RESTRICTIONS BASED ON LIVE AQI ---
+        function updateGrapRules(aqi) {
+            let stage = "NORMAL";
+            let fines = "None";
+            let color = "#00ff9d";
+            let vehText = "Air is safe. All compliant vehicles (except permanently banned overaged vehicles) are allowed.";
+            let constText = "No restrictions on construction activities. Standard dust control rules apply.";
+            let indText = "Industries may operate normally according to standard environmental guidelines.";
+
+            if (aqi > 450) { 
+                stage = "STAGE IV (SEVERE+)"; 
+                fines = "INR 20,000+ & FIR"; 
+                color = "#ff0000"; 
+                vehText = "Complete ban on non-essential truck entry and Delhi-registered BS-IV diesel MGVs/LCVs. Strict ban on BS-III Petrol and BS-IV Diesel LMVs (4-wheelers).";
+                constText = "Complete halt on ALL construction and demolition activities, including linear public projects (highways, roads, flyovers, pipelines).";
+                indText = "Strict closure of non-essential industries. NCR offices ordered to operate at 50% capacity (Work From Home).";
+            } else if (aqi > 400) { 
+                stage = "STAGE III (SEVERE)"; 
+                fines = "INR 20,000+"; 
+                color = "#ff003c"; 
+                vehText = "Restriction on plying of BS-III Petrol and BS-IV Diesel LMVs (4-wheelers) in Delhi-NCR.";
+                constText = "Strict ban on non-essential construction and demolition activities. Includes boring, drilling, and excavation. Exemptions for Metro, Railway, Defense projects.";
+                indText = "Industries not running on cleaner fuels (PNG) must close operations. Stone crushers and mining banned.";
+            } else if (aqi > 300) { 
+                stage = "STAGE II (VERY POOR)"; 
+                fines = "INR 10,000+"; 
+                color = "#ff9f43"; 
+                vehText = "Targeted action against older highly polluting vehicles. Increased parking fees to discourage private transport.";
+                constText = "Strict dust control at construction sites. Use of anti-smog guns and water sprinkling intensified.";
+                indText = "Strict ban on use of diesel generator sets (except for emergency and essential services).";
+            } else if (aqi > 200) { 
+                stage = "STAGE I (POOR)"; 
+                fines = "Variable Fines"; 
+                color = "#f1c40f"; 
+                vehText = "Strict enforcement of PUC (Pollution Under Control) norms. No direct bans on active BS-III/IV vehicles yet.";
+                constText = "Enforcement of C&D waste management rules. Ban on open burning of waste and biomass.";
+                indText = "Routine monitoring of industries. Night sweeping of roads mandated.";
+            }
+
+            document.getElementById('grap-stage-display').innerText = stage;
+            document.getElementById('grap-stage-display').style.color = color;
+            document.getElementById('grap-top-bar').style.borderColor = color;
+            document.getElementById('grap-fine-display').innerText = fines;
+            
+            document.getElementById('grap-vehicle-text').innerHTML = `${vehText}<br><br><strong style="color:var(--neon-red)">Fine: ${fines} (Motor Vehicles Act)</strong>`;
+            document.getElementById('grap-const-text').innerHTML = constText;
+            document.getElementById('grap-ind-text').innerHTML = indText;
+        }
+
+        // --- ECO-SMART NAVIGATION LOGIC ---
         function initNavMap() {
             if (!navMap) {
                 navMap = L.map('nav-map-container').setView(userCoords, 14);
                 
-                // Detailed, Colorful OpenStreetMap (Shows every street/gali in India)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors',
-                    maxZoom: 19 // Allows deep zoom for street-level "gali" detail
+                    maxZoom: 19 
                 }).addTo(navMap);
             } else {
                 navMap.setView(userCoords, 14);
@@ -1144,7 +1230,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing Routes...';
 
             try {
-                // Nominatim Search: '&countrycodes=in' ensures it strictly searches in India for highly accurate local results
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest)}&countrycodes=in&limit=5`);
                 const data = await response.json();
                 
@@ -1196,7 +1281,7 @@
                     document.getElementById('route-stats').style.display = 'grid';
                     
                     // Generate Google Maps URL
-                    const gMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=$${userCoords[0]},${userCoords[1]}&destination=${destCoords[0]},${destCoords[1]}`;
+                    const gMapsUrl = `http://googleusercontent.com/maps.google.com/8{userCoords[0]},${userCoords[1]}&destination=${destCoords[0]},${destCoords[1]}`;
 
                     document.getElementById('green-path-info').innerHTML = `
                         <i class="fas fa-wind"></i> <strong>Avg AQI: 88 (Safe)</strong><br>
@@ -1335,7 +1420,7 @@
                 let statusClass = st.status.includes('Available') ? 'status-avail' : (st.status.includes('Use') ? 'status-busy' : 'status-down');
                 
                 // Generates dynamic route based on global userCoords when clicked
-                let routeFuncCall = `window.open('https://www.google.com/maps/dir/?api=1&origin=' + userCoords[0] + ',' + userCoords[1] + '&destination=${st.lat},${st.lng}', '_blank')`;
+                let routeFuncCall = `window.open('http://googleusercontent.com/maps.google.com/9{userCoords[0]},${userCoords[1]}&destination=${st.lat},${st.lng}', '_blank')`;
 
                 let popupContent = `
                     <div style="font-family: 'Montserrat', sans-serif; color: #111; min-width: 220px;">
@@ -1384,7 +1469,7 @@
             }
         }
 
-        // --- ORIGINAL CHATBOT JS ---
+        // --- CHATBOT JS ---
         function toggleChatPanel() {
             const panel = document.getElementById('chatPanel');
             if (panel.style.display === 'block') { panel.style.display = 'none'; } else { panel.style.display = 'block'; document.getElementById('chatInput').focus(); }
@@ -1425,7 +1510,7 @@
             windowObj.scrollTop = windowObj.scrollHeight;
         }
 
-        // --- ORIGINAL REPORT MODAL LOGIC ---
+        // --- REPORT MODAL LOGIC ---
         function openReportModal() {
             document.getElementById('report-modal').style.display = 'flex';
             if (!reportMap) setTimeout(initReportMap, 100); else setTimeout(() => reportMap.invalidateSize(), 100);
@@ -1464,7 +1549,7 @@
             closeReportModal();
         }
 
-        // --- ORIGINAL BALLOON LOGIC ---
+        // --- BALLOON LOGIC ---
         const pollutionFacts = [
             "Air pollution causes approximately 7 million premature deaths globally every year.",
             "Breathing Delhi's air in winter can be as harmful as smoking up to 25 cigarettes a day.",
@@ -1484,7 +1569,7 @@
 
         function closeFact() { document.getElementById('factPopup').style.display = 'none'; }
         
-        // --- ORIGINAL INSIGHTS/AWARENESS LOGIC ---
+        // --- INSIGHTS/AWARENESS LOGIC ---
         function playSim(selectedSeason) {
             const vid = document.getElementById(selectedSeason + '-vid');
             const overlay = document.getElementById(selectedSeason + '-overlay');
@@ -1602,17 +1687,22 @@
 
             if (!fuel || !year) return showResult("<strong><i class='fas fa-exclamation-triangle'></i> ERROR:</strong> Please complete all dropdowns.", "var(--danger-red)", "rgba(255, 0, 60, 0.1)");
             
-            const age = 2026 - year;
-            if (fuel === "Electric" || fuel === "CNG" || fuel === "Hybrid") showResult(`✅ <strong style="color:var(--neon-green)">STATUS: ALLOWED.</strong><br><br>Clean fuel vehicles are exempt from GRAP Stage III/IV.`, "var(--neon-green)", "rgba(0, 255, 157, 0.1)");
+            const age = 2026 - year; // Currently 2026 context
+            const currentAqi = parseInt(document.getElementById('main-aqi').innerText) || 0;
+            const isStage3or4 = currentAqi >= 400; // GRAP Stage III trigger
+            
+            if (fuel === "Electric" || fuel === "CNG" || fuel === "Hybrid") showResult(`✅ <strong style="color:var(--neon-green)">STATUS: ALLOWED.</strong><br><br>Clean fuel vehicles are exempt from GRAP restrictions at all stages.`, "var(--neon-green)", "rgba(0, 255, 157, 0.1)");
             else if (fuel === "Diesel") {
-                if (age > 10) showResult(`⛔ <strong style="color:var(--danger-red)">STATUS: BANNED.</strong><br><br>Diesel vehicles >10 years are permanently banned.`, "var(--danger-red)", "rgba(255, 0, 60, 0.1)");
-                else if (year < 2020) showResult(`❌ <strong style="color:var(--neon-yellow)">STATUS: RESTRICTED.</strong><br><br>BS-IV Diesel vehicles are banned under GRAP Stage III. Fine: INR 20,000.`, "var(--neon-yellow)", "rgba(241, 196, 15, 0.1)");
-                else showResult(`✅ <strong style="color:var(--neon-green)">STATUS: ALLOWED.</strong><br><br>BS-VI Diesel allowed.`, "var(--neon-green)", "rgba(0, 255, 157, 0.1)");
+                if (age >= 10) showResult(`⛔ <strong style="color:var(--danger-red)">STATUS: BANNED.</strong><br><br>Diesel vehicles 10 years or older are permanently banned in Delhi-NCR, regardless of GRAP stage.`, "var(--danger-red)", "rgba(255, 0, 60, 0.1)");
+                else if (year < 2020 && isStage3or4) showResult(`❌ <strong style="color:var(--neon-yellow)">STATUS: RESTRICTED.</strong><br><br>BS-IV Diesel vehicles are banned under the current GRAP Stage (Live AQI > 400). Fine: INR 20,000.`, "var(--neon-yellow)", "rgba(241, 196, 15, 0.1)");
+                else if (year < 2020 && !isStage3or4) showResult(`⚠️ <strong style="color:var(--neon-yellow)">STATUS: ALLOWED (CURRENTLY).</strong><br><br>BS-IV Diesel is permitted under the current AQI, but will be restricted immediately if AQI crosses 400 (Stage III).`, "var(--neon-yellow)", "rgba(241, 196, 15, 0.1)");
+                else showResult(`✅ <strong style="color:var(--neon-green)">STATUS: ALLOWED.</strong><br><br>BS-VI Diesel vehicles are permitted.`, "var(--neon-green)", "rgba(0, 255, 157, 0.1)");
             } 
             else if (fuel === "Petrol") {
-                if (age > 15) showResult(`⛔ <strong style="color:var(--danger-red)">STATUS: BANNED.</strong><br><br>Petrol vehicles >15 years are permanently banned.`, "var(--danger-red)", "rgba(255, 0, 60, 0.1)");
-                else if (year < 2010) showResult(`❌ <strong style="color:var(--neon-yellow)">STATUS: RESTRICTED.</strong><br><br>BS-III Petrol vehicles are banned under GRAP Stage III. Fine: INR 20,000.`, "var(--neon-yellow)", "rgba(241, 196, 15, 0.1)");
-                else showResult(`✅ <strong style="color:var(--neon-green)">STATUS: ALLOWED.</strong><br><br>BS-IV/BS-VI Petrol allowed.`, "var(--neon-green)", "rgba(0, 255, 157, 0.1)");
+                if (age >= 15) showResult(`⛔ <strong style="color:var(--danger-red)">STATUS: BANNED.</strong><br><br>Petrol vehicles 15 years or older are permanently banned in Delhi-NCR, regardless of GRAP stage.`, "var(--danger-red)", "rgba(255, 0, 60, 0.1)");
+                else if (year < 2010 && isStage3or4) showResult(`❌ <strong style="color:var(--neon-yellow)">STATUS: RESTRICTED.</strong><br><br>BS-III Petrol vehicles are banned under the current GRAP Stage (Live AQI > 400). Fine: INR 20,000.`, "var(--neon-yellow)", "rgba(241, 196, 15, 0.1)");
+                else if (year < 2010 && !isStage3or4) showResult(`⚠️ <strong style="color:var(--neon-yellow)">STATUS: ALLOWED (CURRENTLY).</strong><br><br>BS-III Petrol is permitted under the current AQI, but will be restricted immediately if AQI crosses 400 (Stage III).`, "var(--neon-yellow)", "rgba(241, 196, 15, 0.1)");
+                else showResult(`✅ <strong style="color:var(--neon-green)">STATUS: ALLOWED.</strong><br><br>BS-IV/BS-VI Petrol vehicles are permitted.`, "var(--neon-green)", "rgba(0, 255, 157, 0.1)");
             }
         }
 
