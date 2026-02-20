@@ -285,6 +285,7 @@
             background: transparent; border: 1px solid var(--text-muted);
             color: var(--text-main); padding: 10px 24px; border-radius: 30px;
             cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 600; transition: 0.3s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
         .action-btn:hover, .action-btn.active { border-color: var(--neon-blue); background: rgba(0, 210, 255, 0.1); color: var(--neon-blue); }
 
@@ -428,7 +429,7 @@
 
         .ev-list-item {
             background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 12px;
-            cursor: pointer; transition: 0.3s; display: flex; flex-direction: column;
+            cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; position: relative;
         }
         .ev-list-item:hover { border-color: var(--neon-blue); background: rgba(0,210,255,0.05); transform: translateX(5px); }
         .ev-list-item h5 { margin: 0 0 5px 0; font-family: 'Montserrat', sans-serif; font-size: 1.05rem; color: #fff; }
@@ -441,13 +442,6 @@
         .ev-badge { font-size: 0.7rem; font-family: 'Montserrat', sans-serif; font-weight: 700; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; }
         .ev-badge-power { background: rgba(0, 210, 255, 0.1); color: var(--neon-blue); border: 1px solid rgba(0, 210, 255, 0.3); }
         .ev-badge-conn { background: rgba(241, 196, 15, 0.1); color: var(--neon-yellow); border: 1px solid rgba(241, 196, 15, 0.3); }
-
-        @media(max-width: 900px) {
-            .ev-dashboard { grid-template-columns: 1fr; }
-            .ev-main-container { flex-direction: column; height: auto; }
-            .ev-map-enhanced { height: 400px; }
-            .ev-sidebar { max-height: 400px; }
-        }
 
         .grap-list { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 15px; }
         .grap-item { background: linear-gradient(90deg, rgba(20,20,20,0.8) 0%, rgba(20,20,20,0.4) 100%); border-left: 4px solid var(--neon-red); padding: 20px; cursor: pointer; border-radius: 12px; transition: 0.3s; }
@@ -1026,6 +1020,7 @@
         let reportMap = null;
         let navMap = null;
         let routingControl = null;
+        let userMarkerNav = null;
         let generatedCaptcha = "";
         let season = 'winter';
         let userCoords = [28.6139, 77.2090]; // Default Delhi location
@@ -1062,17 +1057,30 @@
             }
         }
 
+        // --- ENHANCED LOCATION TRACKER ---
         function getLocation() {
             if (navigator.geolocation) {
+                // enableHighAccuracy explicitly requested for better GPS targeting
                 navigator.geolocation.getCurrentPosition(pos => {
                     const lat = pos.coords.latitude;
                     const lon = pos.coords.longitude;
                     userCoords = [lat, lon];
-                    document.getElementById('location-box').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${lat.toFixed(4)}, ${lon.toFixed(4)} (Live Location)`;
+                    
+                    document.getElementById('location-box').innerHTML = `<i class="fas fa-crosshairs"></i> ${lat.toFixed(4)}, ${lon.toFixed(4)} (Accurate Live)`;
                     setTimeout(() => { updateDashboard(342, "HAZARDOUS"); }, 1000);
+                    
+                    // Update Maps if already loaded
+                    if(navMap && userMarkerNav) {
+                        userMarkerNav.setLatLng(userCoords);
+                        navMap.setView(userCoords, 14);
+                    }
                 }, () => {
-                    document.getElementById('location-box').innerHTML = `<i class="fas fa-map-marker-alt"></i> Location Denied. Showing Delhi Default.`;
+                    document.getElementById('location-box').innerHTML = `<i class="fas fa-map-marker-alt"></i> Location Denied. Using Default Center.`;
                     updateDashboard(342, "HAZARDOUS");
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 });
             }
         }
@@ -1110,25 +1118,30 @@
             circle.style.strokeDashoffset = offset;
         }
 
-        // --- ECO-SMART NAVIGATION LOGIC (NOW WITH COLORFUL, WHOLE INDIA MAP) ---
+        // --- ECO-SMART NAVIGATION LOGIC (REVERTED VISUALS, KEPT GOOGLE MAPS) ---
         function initNavMap() {
             if (!navMap) {
                 navMap = L.map('nav-map-container').setView(userCoords, 14);
                 
-                // Changed from Dark Mode to Detailed, Colorful OpenStreetMap (Shows every street/gali in India)
+                // Detailed OpenStreetMap styling
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors',
-                    maxZoom: 19 // Allows deep zoom for street-level "gali" detail
+                    maxZoom: 19 
                 }).addTo(navMap);
+                
             } else {
                 navMap.setView(userCoords, 14);
                 navMap.invalidateSize();
             }
             
-            // Add user location marker
-            L.circleMarker(userCoords, {
-                color: '#00d2ff', fillColor: '#00d2ff', fillOpacity: 0.8, radius: 10
-            }).addTo(navMap).bindPopup("Your Current Location").openPopup();
+            // Add or update user location marker
+            if (!userMarkerNav) {
+                userMarkerNav = L.circleMarker(userCoords, {
+                    color: '#00d2ff', fillColor: '#00d2ff', fillOpacity: 0.8, radius: 10
+                }).addTo(navMap).bindPopup("Your Current Location").openPopup();
+            } else {
+                userMarkerNav.setLatLng(userCoords);
+            }
         }
 
         async function calculateGreenRoute() {
@@ -1136,16 +1149,17 @@
             if (!dest) return alert("Please enter a destination to navigate to.");
 
             const btn = document.getElementById('nav-route-btn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing Routes...';
+            const originalBtnHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
 
             try {
-                // Nominatim Search: '&countrycodes=in' ensures it strictly searches in India for highly accurate local results
+                // Nominatim Search inside India
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest)}&countrycodes=in&limit=5`);
                 const data = await response.json();
                 
                 if (data.length === 0) {
                     alert("Location not found. Try adding the city name (e.g., 'Hauz Khas, New Delhi').");
-                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Find Cleanest Path';
+                    btn.innerHTML = originalBtnHTML;
                     return;
                 }
                 const destCoords = [data[0].lat, data[0].lon];
@@ -1165,7 +1179,7 @@
                     },
                     lineOptions: {
                         styles: [
-                            {color: '#28a745', opacity: 1, weight: 8} // Green / Clean Route (Darker green for visibility on bright map)
+                            {color: '#28a745', opacity: 1, weight: 8} // Green / Clean Route
                         ]
                     },
                     routeWhileDragging: false,
@@ -1179,7 +1193,7 @@
                                 })
                             });
                         }
-                        return null;
+                        return null; // Don't create start marker (using circleMarker instead)
                     }
                 }).addTo(navMap);
 
@@ -1190,11 +1204,17 @@
 
                     document.getElementById('route-stats').style.display = 'grid';
                     
+                    // Generate Google Maps URL
+                    const gMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userCoords[0]},${userCoords[1]}&destination=${destCoords[0]},${destCoords[1]}`;
+
                     document.getElementById('green-path-info').innerHTML = `
                         <i class="fas fa-wind"></i> <strong>Avg AQI: 88 (Safe)</strong><br>
                         <i class="fas fa-road"></i> ${(greenRoute.summary.totalDistance / 1000).toFixed(1)} km<br>
                         <i class="fas fa-clock"></i> Est. Time: ${Math.round(greenRoute.summary.totalTime / 60)} mins<br>
-                        <i class="fas fa-shield-alt"></i> Maximum Exposure Reduction
+                        <i class="fas fa-shield-alt"></i> Maximum Exposure Reduction<br>
+                        <button class="action-btn" onclick="window.open('${gMapsUrl}', '_blank')" style="margin-top: 15px; width: 100%; padding: 10px; border-color: #28a745; color: #28a745; background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
+                            <i class="fas fa-external-link-alt"></i> Get Direction (Google Maps)
+                        </button>
                     `;
                     
                     if(routes.length > 1) {
@@ -1210,18 +1230,18 @@
                         `;
                     }
 
-                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Find Cleanest Path';
+                    btn.innerHTML = originalBtnHTML;
                     navMap.fitBounds(L.latLngBounds([userCoords, destCoords]), {padding: [50, 50]});
                 });
 
                 routingControl.on('routingerror', function() {
                     alert("Could not calculate a route between these points. Ensure they are connected by roads.");
-                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Find Cleanest Path';
+                    btn.innerHTML = originalBtnHTML;
                 });
 
             } catch (error) {
                 alert("Network error while trying to fetch the route.");
-                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Find Cleanest Path';
+                btn.innerHTML = originalBtnHTML;
                 console.error(error);
             }
         }
@@ -1293,7 +1313,7 @@
             }
         }
 
-        /* --- ORIGINAL EV MAP LOGIC --- */
+        /* --- UPDATED EV MAP LOGIC (WITH DIRECTIONS) --- */
         function initEvMap() {
             evMap = L.map('ev-map').setView([28.6139, 77.2090], 11);
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles | Esri' }).addTo(evMap);
@@ -1323,15 +1343,21 @@
                 let statusColor = st.status.includes('Available') ? '#008000' : (st.status.includes('Use') ? '#ff9f43' : '#ff003c');
                 let statusClass = st.status.includes('Available') ? 'status-avail' : (st.status.includes('Use') ? 'status-busy' : 'status-down');
                 
+                // Generates dynamic route based on global userCoords when clicked
+                let routeFuncCall = `window.open('https://www.google.com/maps/dir/?api=1&origin=' + userCoords[0] + ',' + userCoords[1] + '&destination=${st.lat},${st.lng}', '_blank')`;
+
                 let popupContent = `
                     <div style="font-family: 'Montserrat', sans-serif; color: #111; min-width: 220px;">
                         <h4 style="margin: 0 0 8px 0; font-weight: 800; font-size: 1.1rem; border-bottom: 2px solid #00d2ff; padding-bottom: 5px;">${st.name}</h4>
                         <p style="margin: 5px 0; font-family: 'Open Sans', sans-serif; font-size: 0.9rem;"><i class="fas fa-map-marker-alt" style="color:#ff003c; width:15px;"></i> <strong>Location:</strong> ${st.address}</p>
                         <p style="margin: 5px 0; font-family: 'Open Sans', sans-serif; font-size: 0.9rem;"><i class="fas fa-bolt" style="color:var(--neon-blue); width:15px;"></i> <strong>Power:</strong> ${st.power}</p>
                         <p style="margin: 5px 0; font-family: 'Open Sans', sans-serif; font-size: 0.9rem;"><i class="fas fa-plug" style="color:var(--neon-yellow); width:15px;"></i> <strong>Connector:</strong> ${st.connector}</p>
-                        <div style="margin-top: 12px; padding: 6px; background: rgba(0,0,0,0.05); border-radius: 5px; text-align: center; color: ${statusColor}; font-weight: 700; font-size: 0.9rem; border: 1px solid ${statusColor};">
+                        <div style="margin-top: 12px; margin-bottom: 12px; padding: 6px; background: rgba(0,0,0,0.05); border-radius: 5px; text-align: center; color: ${statusColor}; font-weight: 700; font-size: 0.9rem; border: 1px solid ${statusColor};">
                             Status: ${st.status}
                         </div>
+                        <button onclick="${routeFuncCall}" style="width: 100%; background: #00d2ff; border: none; padding: 10px; border-radius: 6px; color: #000; font-weight: bold; cursor: pointer; transition: 0.3s;">
+                            <i class="fas fa-directions"></i> Get Direction
+                        </button>
                     </div>
                 `;
                 
@@ -1342,11 +1368,16 @@
                     <div class="ev-list-item" onclick="focusEvMarker(${index})">
                         <h5>${st.name}</h5>
                         <p style="margin-bottom: 8px;"><i class="fas fa-map-marker-alt"></i> ${st.address}</p>
-                        <div style="display:flex; gap:8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <div style="display:flex; gap:8px; margin-bottom: 10px; flex-wrap: wrap;">
                             <span class="ev-badge ev-badge-power"><i class="fas fa-bolt"></i> ${st.power}</span>
                             <span class="ev-badge ev-badge-conn"><i class="fas fa-plug"></i> ${st.connector}</span>
                         </div>
-                        <p><span class="ev-status-dot ${statusClass}"></span> ${st.status}</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                            <span style="font-size:0.85rem;"><span class="ev-status-dot ${statusClass}"></span> ${st.status}</span>
+                            <button onclick="event.stopPropagation(); ${routeFuncCall}" style="background: rgba(0,210,255,0.15); border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-directions"></i> Route
+                            </button>
+                        </div>
                     </div>
                 `;
             });
@@ -1510,11 +1541,26 @@
             }
         }
 
-        // --- ORIGINAL COMPREHENSIVE GRAP VEHICLE STATUS CHECKER LOGIC ---
+        // --- COMPREHENSIVE GRAP VEHICLE STATUS CHECKER LOGIC ---
+        const defaultYears = [2008, 2010, 2012, 2015, 2018, 2020, 2022, 2024];
+        const defaultFuel = ["Petrol", "Diesel"];
+        const evFuel = ["Petrol", "Diesel", "Electric", "CNG"];
+
         const vehicleDatabase = {
-            "Maruti Suzuki": { "Swift": { years: [2018, 2019, 2020, 2021], fuel: ["Petrol", "Diesel", "CNG"] }, "Baleno": { years: [2018, 2019, 2020, 2021], fuel: ["Petrol", "Diesel", "CNG"] } },
-            "Hyundai": { "Creta": { years: [2018, 2019, 2020, 2021], fuel: ["Petrol", "Diesel"] }, "i20": { years: [2018, 2019, 2020, 2021], fuel: ["Petrol", "Diesel"] } },
-            "Tata Motors": { "Nexon": { years: [2018, 2019, 2020, 2021], fuel: ["Petrol", "Diesel", "Electric", "CNG"] } }
+            "Ford": { "EcoSport": { years: defaultYears, fuel: defaultFuel }, "Endeavour": { years: defaultYears, fuel: ["Diesel"] } },
+            "Honda": { "City": { years: defaultYears, fuel: defaultFuel }, "Amaze": { years: defaultYears, fuel: defaultFuel } },
+            "Hyundai": { "Creta": { years: defaultYears, fuel: defaultFuel }, "i20": { years: defaultYears, fuel: defaultFuel }, "Ioniq 5": { years: [2022, 2024], fuel: ["Electric"] } },
+            "Jeep": { "Compass": { years: [2017, 2019, 2021, 2023], fuel: defaultFuel } },
+            "Kia": { "Seltos": { years: [2019, 2021, 2023], fuel: defaultFuel }, "EV6": { years: [2022, 2023], fuel: ["Electric"] } },
+            "MG Motors": { "Hector": { years: [2019, 2021, 2023], fuel: defaultFuel }, "ZSEV": { years: [2020, 2022, 2023], fuel: ["Electric"] } },
+            "Mahindra": { "Thar": { years: defaultYears, fuel: defaultFuel }, "XUV700": { years: [2021, 2023], fuel: defaultFuel } },
+            "Maruti Suzuki": { "Swift": { years: defaultYears, fuel: ["Petrol", "Diesel", "CNG"] }, "Baleno": { years: defaultYears, fuel: ["Petrol", "CNG"] } },
+            "Nissan": { "Magnite": { years: [2020, 2022, 2024], fuel: ["Petrol"] }, "Kicks": { years: [2019, 2021], fuel: defaultFuel } },
+            "Renault": { "Kwid": { years: [2015, 2018, 2021], fuel: ["Petrol"] }, "Duster": { years: [2012, 2016, 2020], fuel: defaultFuel } },
+            "Skoda": { "Slavia": { years: [2022, 2024], fuel: ["Petrol"] }, "Octavia": { years: defaultYears, fuel: defaultFuel } },
+            "Tata Motors": { "Nexon": { years: [2017, 2019, 2021, 2023], fuel: evFuel }, "Punch": { years: [2021, 2023], fuel: ["Petrol", "Electric", "CNG"] } },
+            "Toyota": { "Innova": { years: defaultYears, fuel: defaultFuel }, "Fortuner": { years: defaultYears, fuel: defaultFuel } },
+            "Volkswagen": { "Polo": { years: defaultYears, fuel: defaultFuel }, "Taigun": { years: [2021, 2023], fuel: ["Petrol"] } }
         };
 
         function initVehicleChecker() {
